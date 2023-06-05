@@ -1,0 +1,112 @@
+name: Greengrass Component Deploy
+
+on: 
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+env:
+  GREENGRASS_REGION: eu-west-1
+  working-directory: ./components
+
+jobs:
+  publish:
+    name: Component publish
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.head_ref }}
+    - uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.OIDC_ROLE_AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ secrets.OIDC_ROLE_AWS_REGION }}
+
+    - name: Install Greengrass Development Kit
+      run: pip install -U git+https://github.com/aws-greengrass/aws-greengrass-gdk-cli.git@v1.2.3
+
+    - name: GDK Build and Publish
+      id: build_publish
+      run: |
+
+        CHANGED_COMPONENTS=$(git diff --name-only HEAD~1 HEAD | grep "^components/" | cut -d '/' -f 2)
+
+        echo "Components changed -> $CHANGED_COMPONENTS"        
+
+        for component in $CHANGED_COMPONENTS
+        do
+          cd $component
+          echo "Building $component ..."
+          gdk component build
+          echo "Publishing $component ..."
+          gdk component publish
+          cd ..
+        done
+
+      working-directory: ${{ env.working-directory }}
+
+  deploy:
+    name: Component deploy
+    runs-on: ubuntu-latest
+    needs: publish
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        ref: ${{ github.head_ref }}
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ secrets.OIDC_ROLE_AWS_ROLE_TO_ASSUME }}
+        aws-region: ${{ secrets.OIDC_ROLE_AWS_REGION }}
+
+    - name: Deploy Greengrass components
+      run: |
+        export AWS_ACCOUNT_ID=$(aws sts get-caller-identity |  jq -r '.Account')
+        export AWS_REGION=${GREENGRASS_REGION}
+        # Thing Group is the name of the branch
+        export THING_GROUP=${GITHUB_REF#refs/heads/}
+
+        CHANGED_COMPONENTS=$(git diff --name-only HEAD~1 HEAD | grep "^components/" | cut -d '/' -f 2)
+
+        if [ -z "$CHANGED_COMPONENTS" ]; then
+          echo "No need to update deployment"
+        else
+          envsubst < "deployment.json.template" > "deployment.json"
+
+          for component in $CHANGED_COMPONENTS
+          do
+            version=$(aws greengrassv2 list-component-versions \
+              --output text \
+              --no-paginate \
+              --arn arn:aws:greengrass:${AWS_REGION}:${AWS_ACCOUNT_ID}:components:${component} \
+              --query 'componentVersions[0].componentVersion')
+
+            jq '.components[$component].componentVersion = $version' --arg component $component --arg version $version deployment.json > "tmp" && mv "tmp" deployment.json
+
+          done
+          
+          cat deployment.json
+          # deploy
+          echo "Deployment finished!"
+        fi
+
+      working-directory: ${{ env.working-directory }}

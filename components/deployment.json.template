@@ -1,0 +1,25 @@
+{
+    "targetArn": "arn:aws:iot:$AWS_REGION:$AWS_ACCOUNT_ID:thinggroup/$THING_GROUP",
+    "deploymentName": "Main deployment",
+    "components": {
+        "com.example.hello": {
+            "componentVersion": "LATEST",
+            "runWith": {}
+        },
+        "com.example.world": {
+            "componentVersion": "LATEST",
+            "runWith": {}
+        }
+    },
+    "deploymentPolicies": {
+        "failureHandlingPolicy": "ROLLBACK",
+        "componentUpdatePolicy": {
+            "timeoutInSeconds": 60,
+            "action": "NOTIFY_COMPONENTS"
+        },
+        "configurationValidationPolicy": {
+            "timeoutInSeconds": 60
+        }
+    },
+    "iotJobConfiguration": {}
+}

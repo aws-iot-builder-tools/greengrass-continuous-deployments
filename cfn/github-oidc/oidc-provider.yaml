@@ -1,0 +1,21 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: 'GitHub OIDC: Provider - Deployed once into each account'
+
+Parameters:
+  GithubTokenThumbprint:
+    Type: String
+    # This is the defualt GithubTokenThumbprint, in a scenario that it changes yu can get the new one by doind the following commands
+    # openssl s_client -servername token.actions.githubusercontent.com -showcerts -connect token.actions.githubusercontent.com:443 < /dev/null 2>/dev/null | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sed "0,/-END CERTIFICATE-/d" > certificate.crt
+    # openssl x509 -in certificate.crt -fingerprint -noout | cut -f2 -d'=' | tr -d ':' | tr '[:upper:]' '[:lower:]'
+    # This hsould print out the new GithubTokenThumbprint
+    Default: 6938fd4d98bab03faadb97b34396831e3780aea1
+
+Resources:
+  GithubOidc:
+    Type: AWS::IAM::OIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ThumbprintList:
+        - !Ref GithubTokenThumbprint
+      ClientIdList:
+        - sts.amazonaws.com

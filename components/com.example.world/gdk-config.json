@@ -1,0 +1,16 @@
+{
+    "component": {
+      "com.example.world": {
+        "author": "Example",
+        "version": "NEXT_PATCH",
+        "build": {
+          "build_system": "zip"
+        },
+        "publish": {
+          "bucket": "greengrass-component-artifacts",
+          "region": "eu-west-1"
+        }
+      }
+    },
+    "gdk_version": "1.2.0"
+}

@@ -1,11 +1,6 @@
-## My Project
+## Greengrass Continuous Deployments
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+The repo deomnstrates how to setup a Greengrass Continuous Deployments using GDK and Github Action. More info in the blog post: 
 
 ## Security
 

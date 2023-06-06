@@ -104,8 +104,10 @@ jobs:
 
           done
           
-          cat deployment.json
           # deploy
+          aws greengrassv2 create-deployment \
+            --cli-input-json file://deployment.json \
+            --region ${AWS_REGION}
           echo "Deployment finished!"
         fi
 

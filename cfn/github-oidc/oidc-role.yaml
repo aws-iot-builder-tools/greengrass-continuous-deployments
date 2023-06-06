@@ -4,7 +4,7 @@ Description: 'GitHub OIDC:| Stack: oidc'
 Parameters:
   FullRepoName:
     Type: String
-    Default: nenadilic84/gdk-test
+    Default: example/example
 
 Resources:
   Role:

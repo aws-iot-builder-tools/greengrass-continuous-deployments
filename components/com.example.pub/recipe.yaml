@@ -1,0 +1,24 @@
+---
+RecipeFormatVersion: "2020-01-25"
+ComponentName: "{COMPONENT_NAME}"
+ComponentVersion: "{COMPONENT_VERSION}"
+ComponentDescription: "A component that publishes temperature data to AWS IoT Core"
+ComponentPublisher: "{COMPONENT_AUTHOR}"
+ComponentConfiguration:
+  DefaultConfiguration:
+    accessControl:
+      aws.greengrass.ipc.mqttproxy:
+        'com.example.pub:mqttproxy:1':
+          policyDescription: Allows access to publish to the temperature topic.
+          operations:
+            - aws.greengrass#PublishToTopic
+          resources:
+            - '*'
+Manifests:
+  - Platform:
+      os: all
+    Artifacts:
+      - URI: "s3://BUCKET_NAME/COMPONENT_NAME/COMPONENT_VERSION/com.example.pub.zip"
+        Unarchive: ZIP
+    Lifecycle:
+      Run: "python3 -u {artifacts:decompressedPath}/com.example.pub/main.py"
